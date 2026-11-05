@@ -10,3 +10,4 @@ Thumbs.db
 data/
 pnpm-lock.yaml
 pnpm-workspace.yaml
+!.env.example
