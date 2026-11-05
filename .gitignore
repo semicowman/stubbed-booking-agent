@@ -1,7 +1,6 @@
 node_modules/
 .env
 .env.*
-!.env.example
 logs/
 *.log
 .DS_Store
@@ -9,3 +8,5 @@ Thumbs.db
 .vscode/
 .idea/
 data/
+pnpm-lock.yaml
+pnpm-workspace.yaml
