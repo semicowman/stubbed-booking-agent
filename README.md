@@ -64,6 +64,8 @@ The clinic is fictional, and so are its rules. Patients can request a **check-up
 - Classes are open to everyone but only run on certain days at certain clinics, and massages are only offered at some clinics: that is data in `config/service-availability.json`.
 - Requests are for patients 16 and over, up to two months ahead and at least 60 minutes from now.
 
+A diagram of how these branches lead to action notes is in [`docs/branching.md`](docs/branching.md).
+
 `src/rules/` holds them as plain functions with no I/O: `dates.js` (the patient's words to a date), `rules.js` (what each patient may request, what is still needed, what must be offered or refused), `availability.js` (clinic and day restrictions), `phone.js` (mobile numbers), `clinics.js`, and `templates.js` (wording that must be exact: refusals, closing messages, the staff note). `src/agent/checks.js` applies them to the notes. It keeps no name, email or mobile number, only that one was given.
 
 When a note breaks a rule (a date too far ahead, an unknown clinic, a class on the wrong day, a request without the patient's yes) the reply is not sent: the model is told what is wrong, with the exact wording to use, and writes it again once. Guidance that does not need a rewrite (what is still needed, an offer to make) goes in front of the patient's next message.
