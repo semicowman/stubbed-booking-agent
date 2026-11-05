@@ -1,0 +1,20 @@
+{
+  "about": "Which clinics offer each service, and on which days. Clinics are named by code (CEN, EST, WST, NPT, SSH, MTN). A service not listed here is offered at every clinic on every day. The clinic maintains this file; after editing, restart the service.",
+  "massage": {
+    "clinics": [
+      "CEN",
+      "EST",
+      "SSH"
+    ]
+  },
+  "class": {
+    "clinics": [
+      "CEN",
+      "WST"
+    ],
+    "days": [
+      "Tuesday",
+      "Thursday"
+    ]
+  }
+}

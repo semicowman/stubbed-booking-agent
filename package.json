@@ -1,0 +1,22 @@
+{
+  "name": "stubbed-booking-agent",
+  "version": "1.0.0",
+  "description": "A booking assistant for a fictional clinic with nothing behind it: it chats, applies the booking rules, and writes down the actions it would have taken.",
+  "type": "module",
+  "main": "src/cli.js",
+  "scripts": {
+    "chat": "node src/cli.js",
+    "eval": "node eval/run.js",
+    "test": "node --test \"test/**/*.test.js\"",
+    "web": "node src/web/server.js"
+  },
+  "dependencies": {
+    "libphonenumber-js": "^1.13.15"
+  },
+  "optionalDependencies": {
+    "@google/genai": "^2.24.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

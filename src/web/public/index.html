@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stubbed booking agent</title>
+<style>
+  :root {
+    --bg: #f5f6f4; --panel: #ffffff; --ink: #1d2421; --muted: #66706b; --line: #dfe3df;
+    --accent: #1f6f5c; --accent-ink: #ffffff; --patient: #dcefe9; --agent: #eef0ee; --warn: #8a4b00; --warn-bg: #fff3dc; --bad: #a3261f; --bad-bg: #fde8e6; --ok: #1f6f5c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #151a18; --panel: #1d2421; --ink: #e6ebe8; --muted: #9aa5a0; --line: #2f3935; --accent: #4cb59a; --accent-ink: #0d1613; --patient: #21443b; --agent: #28312d; --warn: #f2c27a; --warn-bg: #3a2d14; --bad: #f1928b; --bad-bg: #3d1f1c; --ok: #4cb59a; }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; display: flex; flex-direction: column; }
+  header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 16px; margin: 0; }
+  .badge { font-size: 12px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+  .badge.ok { color: var(--ok); border-color: var(--ok); }
+  .badge.warn { color: var(--warn); background: var(--warn-bg); border-color: var(--warn); }
+  header .grow { flex: 1; }
+  button { font: inherit; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button.danger { color: var(--bad); }
+  button:disabled { opacity: .5; cursor: default; }
+  button.small { padding: 2px 8px; font-size: 13px; }
+  main { flex: 1; min-height: 0; display: grid; grid-template-columns: 250px minmax(0, 1fr) 320px; gap: 12px; padding: 12px; }
+  @media (max-width: 1000px) { main { grid-template-columns: 1fr; overflow: auto; } }
+  section.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .scroll { overflow: auto; min-height: 0; flex: 1; padding: 10px 12px; }
+  .persona-item { display: block; width: 100%; text-align: left; margin: 0 0 6px; }
+  .persona-item.active { border-color: var(--accent); background: var(--patient); }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 12px; border-top: 1px solid var(--line); }
+  #chat { display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 86%; padding: 8px 12px; border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .msg.patient { align-self: flex-end; background: var(--patient); border-bottom-right-radius: 3px; }
+  .msg.agent { align-self: flex-start; background: var(--agent); border-bottom-left-radius: 3px; }
+  .msg.pending { color: var(--muted); font-style: italic; }
+  .meta { align-self: flex-start; max-width: 92%; font-size: 12.5px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+  .note { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; overflow-wrap: anywhere; }
+  .note.bad { color: var(--bad); border-color: var(--bad); }
+  .findings { padding: 4px 8px; border-radius: 6px; background: var(--warn-bg); color: var(--warn); }
+  .findings.err { background: var(--bad-bg); color: var(--bad); }
+  .findings ul { margin: 4px 0 0 16px; padding: 0; }
+  .system { align-self: center; font-size: 13px; color: var(--muted); text-align: center; }
+  details.handover { align-self: stretch; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; background: var(--bg); }
+  details.handover pre { white-space: pre-wrap; margin: 6px 0 0; font: 12.5px/1.4 ui-monospace, Consolas, monospace; }
+  .error { align-self: center; color: var(--bad); background: var(--bad-bg); padding: 6px 10px; border-radius: 8px; max-width: 90%; }
+  form#send { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); }
+  form#send textarea { flex: 1; resize: none; height: 54px; font: inherit; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  .card h3 { margin: 0 0 4px; font-size: 15px; }
+  .card p { margin: 4px 0; }
+  .card .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; margin-top: 10px; }
+  .goal { background: var(--patient); border-radius: 8px; padding: 6px 8px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .chip { font-size: 13px; padding: 3px 9px; border-radius: 99px; text-align: left; }
+  .chip b { font-weight: 600; color: var(--muted); margin-right: 4px; }
+  dl.state { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; font-size: 13px; }
+  dl.state dt { color: var(--muted); }
+  dl.state dd { margin: 0; overflow-wrap: anywhere; }
+  dialog { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--ink); width: min(620px, 94vw); padding: 0; }
+  dialog::backdrop { background: rgba(0,0,0,.4); }
+  dialog form { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; max-height: 90vh; overflow: auto; }
+  dialog h2 { margin: 0; font-size: 16px; }
+  dialog label { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--muted); }
+  dialog input, dialog textarea { font: inherit; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  .fact-row { display: grid; grid-template-columns: 1fr 1.6fr auto; gap: 6px; }
+  .notice { font-size: 13px; background: var(--warn-bg); color: var(--warn); padding: 6px 10px; border-radius: 8px; }
+  .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Stubbed booking agent</h1>
+  <span class="badge" id="model">model…</span>
+  <span class="badge" id="isolation"></span>
+  <span class="grow"></span>
+  <span class="muted" id="tokens"></span>
+  <button id="newChat" class="primary">New chat</button>
+</header>
+<main>
+  <section class="panel" aria-label="Personas">
+    <h2>Patient personas</h2>
+    <div class="scroll" id="personaList"></div>
+    <div class="row">
+      <button id="addPersona" class="small">New</button>
+      <button id="exportPersonas" class="small">Export</button>
+      <button id="importPersonas" class="small">Import</button>
+      <button id="resetPersonas" class="small">Reset examples</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+    </div>
+  </section>
+
+  <section class="panel" aria-label="Chat">
+    <h2>Chat: you are the patient. Nothing is booked.</h2>
+    <div class="scroll" id="scroll"><div id="chat" aria-live="polite"></div></div>
+    <form id="send">
+      <textarea id="input" placeholder="Type as the patient. Enter sends, Shift+Enter adds a line." aria-label="Message"></textarea>
+      <button class="primary" id="sendBtn" type="submit">Send</button>
+    </form>
+  </section>
+
+  <section class="panel" aria-label="Persona card and rules state">
+    <h2>Persona card</h2>
+    <div class="scroll">
+      <div id="card" class="card muted">Pick a persona on the left.</div>
+      <h2 style="margin:14px -12px 8px;border-top:1px solid var(--line)">What the rules hold</h2>
+      <dl class="state" id="state"><dt>Nothing yet</dt><dd></dd></dl>
+    </div>
+  </section>
+</main>
+
+<dialog id="editor">
+  <form method="dialog" id="editForm">
+    <h2 id="editTitle">Persona</h2>
+    <div class="notice">Use made-up details only: names, emails and numbers here are saved on this computer as plain text.</div>
+    <label>Name<input name="name" maxlength="80" required></label>
+    <label>Who they are<textarea name="summary" rows="2" maxlength="600"></textarea></label>
+    <label>What they want<textarea name="goal" rows="2" maxlength="400"></textarea></label>
+    <label>How they behave<textarea name="behaviour" rows="3" maxlength="1000"></textarea></label>
+    <label>Language<input name="language" maxlength="40" placeholder="English"></label>
+    <label>Opening line<input name="openingLine" maxlength="300"></label>
+    <div><strong style="font-size:13px">Facts they know</strong> <span class="muted" style="font-size:12px">(click one on the card to put it in the message box)</span></div>
+    <div id="factRows"></div>
+    <div><button type="button" id="addFact" class="small">Add a fact</button></div>
+    <div id="editError" class="error" hidden></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button type="button" id="cancelEdit">Cancel</button>
+      <button type="submit" class="primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+'use strict';
+// Everything the model writes is shown with textContent, never as HTML.
+const $ = (id) => document.getElementById(id);
+const h = (tag, props = {}, ...kids) => {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') el.className = v; else if (k.startsWith('on')) el.addEventListener(k.slice(2), v); else if (v !== false && v != null) el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat()) if (kid != null) el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  return el;
+};
+const api = async (method, path, body) => {
+  const res = await fetch(path, { method, headers: body === undefined ? {} : { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
+  let data = {};
+  try { data = await res.json(); } catch { /* not JSON */ }
+  if (!res.ok) { const e = new Error(data.error || `HTTP ${res.status}`); e.status = res.status; throw e; }
+  return data;
+};
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch { /* storage unavailable */ } },
+};
+
+let chatId = null;
+let personas = [];
+let selected = null;
+let busy = false;
+let editing = null; // persona being edited (null: new)
+
+// ---- chat ---------------------------------------------------------------------------------------------------------------------------
+const chat = $('chat');
+const scroller = $('scroll');
+const toBottom = () => { scroller.scrollTop = scroller.scrollHeight; };
+const addSystem = (text) => { chat.append(h('div', { class: 'system' }, text)); toBottom(); };
+const addError = (text) => { chat.append(h('div', { class: 'error', role: 'alert' }, text)); toBottom(); };
+
+async function newChat(announce = true) {
+  chatId = (await api('POST', '/api/chats', {})).id;
+  chat.replaceChildren();
+  if (announce) addSystem('New conversation. You are the patient: write the first message.');
+  renderState(null);
+  $('tokens').textContent = '';
+  $('input').focus();
+}
+
+function argsText(args) { const s = JSON.stringify(args); return s === '{}' ? '' : ` ${s}`; }
+
+function renderReply(r) {
+  chat.append(h('div', { class: 'msg agent' }, r.reply));
+  const meta = h('div', { class: 'meta' });
+  if (r.notes.length) meta.append(h('div', {}, 'Action notes (noted, nothing done):'), ...r.notes.map((n) => h('div', { class: `note${n.invalid || n.problems.length ? ' bad' : ''}` }, `${n.name}${argsText(n.args)}${n.problems.length ? `  <- ${n.problems.join('; ')}` : ''}`)));
+  const errors = r.findings.filter((f) => f.level === 'error');
+  const hints = r.findings.filter((f) => f.level === 'info');
+  if (r.rejected) meta.append(h('div', { class: 'findings err' }, 'The first reply broke a booking rule and was rewritten once.'));
+  if (errors.length) meta.append(h('div', { class: 'findings err' }, 'Rules still broken after the rewrite:', h('ul', {}, errors.map((f) => h('li', {}, f.text)))));
+  if (hints.length) meta.append(h('details', {}, h('summary', {}, `Rules check for the next turn (${hints.length})`), h('div', { class: 'findings' }, h('ul', {}, hints.map((f) => h('li', {}, `${f.text}${f.say ? ` Exact wording: "${f.say}"` : ''}`))))));
+  if (meta.childNodes.length) chat.append(meta);
+  if (r.handover) chat.append(h('details', { class: 'handover', open: true }, h('summary', {}, 'Hand-over note for the team'), h('pre', {}, r.handover)));
+  if (r.ended) addSystem(`Session ended (${r.endReason}). Press New chat to start again.`);
+  toBottom();
+}
+
+async function submit(text) {
+  if (busy || !text.trim()) return;
+  busy = true;
+  setBusy(true);
+  chat.append(h('div', { class: 'msg patient' }, text.trim()));
+  const pending = h('div', { class: 'msg agent pending' }, 'The agent is thinking…');
+  chat.append(pending);
+  toBottom();
+  try {
+    const r = await api('POST', `/api/chats/${chatId}/messages`, { text });
+    pending.remove();
+    renderReply(r);
+    $('tokens').textContent = `${r.usage.calls} model calls · ${r.usage.input} in · ${r.usage.output} out`;
+    refreshState();
+    if (r.ended) $('input').disabled = true;
+  } catch (err) {
+    pending.remove();
+    if (err.status === 404) { addError('That conversation is gone (the server restarted). Starting a new one: send your message again.'); await newChat(false); } else addError(err.message);
+  } finally {
+    busy = false;
+    setBusy(false);
+  }
+}
+function setBusy(on) { $('sendBtn').disabled = on; if (!on && !$('input').disabled) $('input').focus(); }
+
+$('send').addEventListener('submit', (e) => { e.preventDefault(); const t = $('input').value; if (!t.trim() || busy) return; $('input').value = ''; submit(t); });
+$('input').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('send').requestSubmit(); } });
+$('newChat').addEventListener('click', async () => { $('input').disabled = false; await newChat(); });
+
+// ---- what the rules hold --------------------------------------------------------------------------------------------------------------
+function renderState(s) {
+  const dl = $('state');
+  dl.replaceChildren();
+  if (!s) { dl.append(h('dt', {}, 'Nothing yet'), h('dd', {})); return; }
+  const rows = [];
+  const add = (k, v) => { if (v !== undefined && v !== null && v !== '' && v !== false) rows.push([k, v === true ? 'yes' : v]); };
+  add('Patient type', s.facts.patientType);
+  add('Age check (16 or over)', s.facts.ageOk ? 'confirmed' : '');
+  add('Contact details', s.flags.contact ? 'given' : '');
+  add('Last visit', s.facts.lastVisit);
+  add('Massages that week', s.facts.massagesThisWeek);
+  add('Service', s.draft.request);
+  add('Add-on', s.draft.addOn);
+  add('Clinic', s.draft.clinic);
+  add('Date', s.draft.date);
+  add('Time', s.draft.time);
+  add('Practitioner', s.draft.practitioner);
+  s.requested.forEach((r, i) => add(`Noted request ${i + 1}`, `${r.service} · ${r.clinic} · ${r.date}${r.time ? ` ${r.time}` : ''}`));
+  s.notBooked.forEach((n) => add('Not booked', `${n.service}: ${n.reason}`));
+  add('Ended', s.ended);
+  if (!rows.length) rows.push(['Nothing recorded yet', '']);
+  for (const [k, v] of rows) dl.append(h('dt', {}, k), h('dd', {}, String(v)));
+}
+async function refreshState() { try { renderState(await api('GET', `/api/chats/${chatId}`)); } catch { /* the chat may be gone */ } }
+
+// ---- personas -------------------------------------------------------------------------------------------------------------------------
+function insertIntoInput(text) {
+  const el = $('input');
+  if (el.disabled) return;
+  el.value = el.value && !/\s$/.test(el.value) ? `${el.value} ${text}` : el.value + text;
+  el.focus();
+}
+
+function renderPersonas() {
+  const list = $('personaList');
+  list.replaceChildren(...personas.map((p) => h('button', { class: `persona-item${selected?.id === p.id ? ' active' : ''}`, onclick: () => select(p.id) }, p.name)));
+  if (!personas.length) list.append(h('p', { class: 'muted' }, 'No personas yet. Press New.'));
+}
+
+function renderCard() {
+  const card = $('card');
+  card.replaceChildren();
+  card.className = 'card';
+  const p = selected;
+  if (!p) { card.className = 'card muted'; card.append('Pick a persona on the left.'); return; }
+  card.append(h('h3', {}, p.name));
+  if (p.summary) card.append(h('p', {}, p.summary));
+  if (p.goal) card.append(h('div', { class: 'label' }, 'Wants'), h('p', { class: 'goal' }, p.goal));
+  if (p.behaviour) card.append(h('div', { class: 'label' }, 'Behaves'), h('p', {}, p.behaviour));
+  if (p.language) card.append(h('div', { class: 'label' }, 'Language'), h('p', {}, p.language));
+  if (p.openingLine) card.append(h('div', { class: 'label' }, 'Opening line'), h('button', { class: 'chip', onclick: () => insertIntoInput(p.openingLine) }, p.openingLine));
+  if (p.facts.length) card.append(h('div', { class: 'label' }, 'Facts they know (click to type)'), h('div', { class: 'chips' }, p.facts.map((f) => h('button', { class: 'chip', title: 'Put this in the message box', onclick: () => insertIntoInput(f.value) }, f.label ? h('b', {}, `${f.label}:`) : null, f.value))));
+  card.append(h('div', { class: 'row', style: 'padding-left:0;border-top:0;margin-top:10px' },
+    h('button', { class: 'small', onclick: () => openEditor(p) }, 'Edit'),
+    h('button', { class: 'small', onclick: () => duplicate(p) }, 'Duplicate'),
+    h('button', { class: 'small danger', onclick: () => remove(p) }, 'Delete')));
+}
+
+function select(id) {
+  selected = personas.find((p) => p.id === id) ?? null;
+  if (selected) store.set('persona', selected.id);
+  renderPersonas();
+  renderCard();
+}
+
+async function savePersonas(next, keep) {
+  const res = await api('PUT', '/api/personas', { personas: next });
+  personas = res.personas;
+  const wanted = keep ?? selected?.id;
+  select(personas.some((p) => p.id === wanted) ? wanted : personas[0]?.id);
+}
+
+function duplicate(p) { savePersonas([...personas, { ...p, id: '', name: `${p.name} (copy)`, facts: p.facts.map((f) => ({ ...f })) }]).then(() => select(personas.at(-1).id)).catch((e) => addError(e.message)); }
+function remove(p) { if (confirm(`Delete "${p.name}"?`)) savePersonas(personas.filter((x) => x.id !== p.id)).catch((e) => addError(e.message)); }
+
+// editor
+const form = $('editForm');
+function factRow(f = { label: '', value: '' }) {
+  const row = h('div', { class: 'fact-row' },
+    h('input', { name: 'factLabel', placeholder: 'Label (e.g. Email)', maxlength: 60, value: f.label }),
+    h('input', { name: 'factValue', placeholder: 'Value', maxlength: 300, value: f.value }),
+    h('button', { type: 'button', class: 'small danger', 'aria-label': 'Remove this fact', onclick: () => row.remove() }, '✕'));
+  return row;
+}
+function openEditor(p) {
+  editing = p;
+  $('editTitle').textContent = p ? 'Edit persona' : 'New persona';
+  const v = p ?? { name: '', summary: '', goal: '', behaviour: '', language: 'English', openingLine: '', facts: [{ label: '', value: '' }] };
+  for (const k of ['name', 'summary', 'goal', 'behaviour', 'language', 'openingLine']) form.elements[k].value = v[k] ?? '';
+  $('factRows').replaceChildren(...v.facts.map(factRow));
+  $('editError').hidden = true;
+  $('editor').showModal();
+}
+$('addFact').addEventListener('click', () => $('factRows').append(factRow()));
+$('cancelEdit').addEventListener('click', () => $('editor').close());
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const labels = [...form.querySelectorAll('[name=factLabel]')];
+  const values = [...form.querySelectorAll('[name=factValue]')];
+  const persona = {
+    id: editing?.id ?? '',
+    ...Object.fromEntries(['name', 'summary', 'goal', 'behaviour', 'language', 'openingLine'].map((k) => [k, form.elements[k].value])),
+    facts: labels.map((l, i) => ({ label: l.value, value: values[i].value })).filter((f) => f.label.trim() || f.value.trim()),
+  };
+  const next = editing ? personas.map((x) => (x.id === editing.id ? persona : x)) : [...personas, persona];
+  try {
+    await savePersonas(next, editing?.id);
+    if (!editing) select(personas.at(-1).id);
+    $('editor').close();
+  } catch (err) { $('editError').textContent = err.message; $('editError').hidden = false; }
+});
+$('addPersona').addEventListener('click', () => openEditor(null));
+
+$('resetPersonas').addEventListener('click', async () => {
+  if (!confirm('Replace all personas with the shipped examples? Your own personas will be lost (Export first to keep them).')) return;
+  try { personas = (await api('POST', '/api/personas/reset', {})).personas; select(personas[0]?.id); } catch (e) { addError(e.message); }
+});
+$('exportPersonas').addEventListener('click', () => {
+  const url = URL.createObjectURL(new Blob([`${JSON.stringify(personas, null, 2)}\n`], { type: 'application/json' }));
+  const a = h('a', { href: url, download: 'personas.json' });
+  document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+$('importPersonas').addEventListener('click', () => $('importFile').click());
+$('importFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const incoming = JSON.parse(await file.text());
+    if (!Array.isArray(incoming)) throw new Error('the file must hold a list of personas');
+    if (confirm(`Add ${incoming.length} persona(s) from "${file.name}"?`)) await savePersonas([...personas, ...incoming.map((p) => ({ ...p, id: '' }))]);
+  } catch (err) { addError(`Import failed: ${err.message}`); }
+});
+
+// ---- start --------------------------------------------------------------------------------------------------------------------------
+(async function init() {
+  try {
+    const info = await api('GET', '/api/info');
+    $('model').textContent = info.model;
+    const iso = $('isolation');
+    iso.textContent = info.isolated ? 'isolated: only your local model' : 'Gemini: the chat leaves this computer';
+    iso.className = `badge ${info.isolated ? 'ok' : 'warn'}`;
+    personas = (await api('GET', '/api/personas')).personas;
+    select(personas.some((p) => p.id === store.get('persona')) ? store.get('persona') : personas[0]?.id);
+    await newChat();
+  } catch (err) { addError(err.message); }
+})();
+</script>
+</body>
+</html>
